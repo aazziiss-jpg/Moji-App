@@ -1,13 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_theme.dart';
+import 'quiz_provider.dart';
 
-class QuizPage extends StatelessWidget {
+class QuizPage extends ConsumerWidget {
   const QuizPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final quizState = ref.watch(quizProvider);
+    final quizNotifier = ref.read(quizProvider.notifier);
+
+    if (quizState.currentQuestion == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Kuis Evaluasi')),
+      appBar: AppBar(
+        title: Text('Kuis - Soal ${quizState.questionIndex}'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0),
+            child: Center(
+              child: Text(
+                'Skor: ${quizState.score}',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppTheme.primary,
+                      fontSize: 16,
+                    ),
+              ),
+            ),
+          )
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -15,36 +40,50 @@ class QuizPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Pilih romaji yang tepat untuk karakter berikut:',
+                'Pilih romaji yang tepat:',
                 style: Theme.of(context).textTheme.titleLarge,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 32),
-              Container(
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
                 padding: const EdgeInsets.symmetric(vertical: 48),
                 decoration: BoxDecoration(
-                  color: AppTheme.surface,
+                  color: _getFeedbackColor(quizState),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: AppTheme.border),
                 ),
                 child: Center(
                   child: Text(
-                    'あ', // Dummy karakter soal
+                    quizState.currentQuestion!.character,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontSize: 64,
-                          color: AppTheme.primary,
+                          color: quizState.isAnswered ? AppTheme.background : AppTheme.primary,
                         ),
                   ),
                 ),
               ),
               const SizedBox(height: 48),
-              _buildOptionButton(context, 'a'),
-              const SizedBox(height: 12),
-              _buildOptionButton(context, 'i'),
-              const SizedBox(height: 12),
-              _buildOptionButton(context, 'u'),
-              const SizedBox(height: 12),
-              _buildOptionButton(context, 'e'),
+              ...quizState.options.map((option) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: _buildOptionButton(context, option, quizState, quizNotifier),
+                );
+              }),
+              const Spacer(),
+              if (quizState.isAnswered)
+                ElevatedButton(
+                  onPressed: () => quizNotifier.nextQuestion(),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: AppTheme.background,
+                    padding: const EdgeInsets.all(16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text('Soal Selanjutnya'),
+                ),
             ],
           ),
         ),
@@ -52,19 +91,47 @@ class QuizPage extends StatelessWidget {
     );
   }
 
-  Widget _buildOptionButton(BuildContext context, String label) {
+  Color _getFeedbackColor(QuizState state) {
+    if (!state.isAnswered) return AppTheme.surface;
+    final isCorrect = state.selectedAnswer == state.currentQuestion?.romaji;
+    return isCorrect ? Colors.green.shade600 : Colors.red.shade600;
+  }
+
+  Widget _buildOptionButton(
+    BuildContext context,
+    String label,
+    QuizState state,
+    QuizNotifier notifier,
+  ) {
+    bool isSelected = state.selectedAnswer == label;
+    bool isCorrectAnswer = label == state.currentQuestion?.romaji;
+
+    Color borderColor = AppTheme.border;
+    Color textColor = AppTheme.textPrimary;
+
+    if (state.isAnswered) {
+      if (isCorrectAnswer) {
+        borderColor = Colors.green.shade600;
+        textColor = Colors.green.shade600;
+      } else if (isSelected && !isCorrectAnswer) {
+        borderColor = Colors.red.shade600;
+        textColor = Colors.red.shade600;
+      }
+    }
+
     return OutlinedButton(
-      onPressed: () {}, // Logika State Management akan ditambahkan di Tahap 6
+      onPressed: () => notifier.answer(label),
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        side: const BorderSide(color: AppTheme.border, width: 2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        side: BorderSide(color: borderColor, width: 2),
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontSize: 18,
+              color: textColor,
+            ),
       ),
     );
   }

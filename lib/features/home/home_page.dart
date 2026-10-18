@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../core/theme/app_theme.dart';
 import '../../shared/widgets/menu_card.dart';
+import '../progress/progress_provider.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends ConsumerWidget {
   const HomePage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final highScore = ref.watch(highScoreProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Moji'),
@@ -31,7 +35,7 @@ class HomePage extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 32),
-              _buildProgressCard(context),
+              _buildProgressCard(context, highScore),
               const SizedBox(height: 32),
               Text(
                 'Materi Pembelajaran',
@@ -65,7 +69,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressCard(BuildContext context) {
+  Widget _buildProgressCard(BuildContext context, int highScore) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -80,39 +84,32 @@ class HomePage extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Progres Keseluruhan',
+                  'Skor Tertinggi Kuis',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontSize: 16,
                       ),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '0 / 92 Karakter',
+                  'Terus tingkatkan skormu!',
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
               ],
             ),
           ),
-          Stack(
-            alignment: Alignment.center,
-            children: [
-              const SizedBox(
-                width: 60,
-                height: 60,
-                child: CircularProgressIndicator(
-                  value: 0.0,
-                  backgroundColor: AppTheme.border,
-                  color: AppTheme.primary,
-                  strokeWidth: 8,
-                ),
-              ),
-              Text(
-                '0%',
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 14,
-                    ),
-              ),
-            ],
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            decoration: BoxDecoration(
+              color: AppTheme.primary,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              highScore.toString(),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontSize: 24,
+                    color: AppTheme.background,
+                  ),
+            ),
           ),
         ],
       ),
