@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'app/router.dart';
+import 'core/theme/app_theme.dart';
 
 void main() {
   runApp(
@@ -14,21 +16,11 @@ class MojiApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Moji',
       debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFFE53935),
-          brightness: Brightness.light,
-        ),
-      ),
-      home: const Scaffold(
-        body: Center(
-          child: Text('Moji - Aplikasi Belajar Huruf Jepang'),
-        ),
-      ),
+      theme: AppTheme.lightTheme,
+      routerConfig: appRouter,
     );
   }
 }
