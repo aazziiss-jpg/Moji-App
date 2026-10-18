@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
+import '../../core/utils/greeting_util.dart';
 import '../../shared/widgets/menu_card.dart';
 import '../progress/progress_provider.dart';
+import '../profile/profile_provider.dart';
 
 class HomePage extends ConsumerWidget {
   const HomePage({super.key});
@@ -11,10 +14,22 @@ class HomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final highScore = ref.watch(highScoreProvider);
+    final profileAsync = ref.watch(profileNameProvider);
+    final greeting = GreetingUtil.getGreeting();
+    final name = profileAsync.maybeWhen(
+      data: (data) => data,
+      orElse: () => 'Pelajar',
+    );
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Moji'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: AppTheme.textPrimary),
+            onPressed: () => Supabase.instance.client.auth.signOut(),
+          ),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -23,16 +38,12 @@ class HomePage extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Konnichiwa!',
+                '$greeting,\n$name-san!',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontSize: 28,
                       color: AppTheme.primary,
+                      height: 1.2,
                     ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Mari lanjutkan belajar huruf Jepang hari ini.',
-                style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 32),
               _buildProgressCard(context, highScore),
@@ -85,9 +96,7 @@ class HomePage extends ConsumerWidget {
               children: [
                 Text(
                   'Skor Tertinggi Kuis',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontSize: 16,
-                      ),
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
                 ),
                 const SizedBox(height: 8),
                 Text(
